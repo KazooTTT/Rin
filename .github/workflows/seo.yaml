@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch:
-  
 
 jobs:
   build:
@@ -28,7 +27,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgbm-dev
-          npx puppeteer browsers install chrome
+          PUPPETEER_CACHE_DIR=/home/runner/.cache/puppeteer npx puppeteer browsers install chrome
+
+      - name: Resolve Puppeteer executable path
+        id: chrome-path
+        run: |
+          echo "path=$(node -e "const puppeteer = require('puppeteer'); console.log(puppeteer.executablePath())")" >> $GITHUB_OUTPUT
 
       - name: Run script
         env: # Or as an environment variable
@@ -43,6 +47,8 @@ jobs:
           S3_BUCKET: ${{ vars.S3_BUCKET }}
           S3_CACHE_FOLDER: ${{ vars.S3_CACHE_FOLDER }}
           S3_FORCE_PATH_STYLE: ${{ vars.S3_FORCE_PATH_STYLE }}
+          PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.chrome-path.outputs.path }}
         run: |
           cd Rin/
           bun install --frozen-lockfile
